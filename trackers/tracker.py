@@ -13,38 +13,8 @@ class Tracker:
     def __init__(self, model_path):
         self.model = YOLO(model_path) 
         self.tracker = sv.ByteTrack()
-
-    def add_position_to_tracks(sekf,tracks):
-        for object, object_tracks in tracks.items():
-            for frame_num, track in enumerate(object_tracks):
-                for track_id, track_info in track.items():
-                    bbox = track_info['bbox']
-                    if object == 'ball':
-                        position= get_center_of_bbox(bbox)
-                    else:
-                        position = get_foot_position(bbox)
-                    tracks[object][frame_num][track_id]['position'] = position
-
-    def interpolate_ball_positions(self,ball_positions):
-        ball_positions = [x.get(1,{}).get('bbox',[]) for x in ball_positions]
-        df_ball_positions = pd.DataFrame(ball_positions,columns=['x1','y1','x2','y2'])
-
-        # Interpolate missing values
-        df_ball_positions = df_ball_positions.interpolate()
-        df_ball_positions = df_ball_positions.bfill()
-
-        ball_positions = [{1: {"bbox":x}} for x in df_ball_positions.to_numpy().tolist()]
-
-        return ball_positions
-
-    def detect_frames(self, frames):
-        batch_size=20 
-        detections = [] 
-        for i in range(0,len(frames),batch_size):
-            detections_batch = self.model.predict(frames[i:i+batch_size],conf=0.1)
-            detections += detections_batch
-        return detections
-
+        
+    #Utility function to get object tracking data for plyers, balls and referees       
     def get_object_tracks(self, frames, read_from_stub=False, stub_path=None):
         
         if read_from_stub and stub_path is not None and os.path.exists(stub_path):
@@ -64,7 +34,7 @@ class Tracker:
             cls_names = detection.names
             cls_names_inv = {v:k for k,v in cls_names.items()}
 
-            # Covert to supervision Detection format
+            # Convert to supervision Detection format
             detection_supervision = sv.Detections.from_ultralytics(detection)
 
             # Convert GoalKeeper to player object
@@ -102,6 +72,47 @@ class Tracker:
                 pickle.dump(tracks,f)
 
         return tracks
+    
+    def detect_frames(self, frames):
+        batch_size=20 
+        detections = [] 
+        for i in range(0,len(frames),batch_size):
+            detections_batch = self.model.predict(frames[i:i+batch_size],conf=0.1)
+            detections += detections_batch
+        return detections
+        
+    def draw_annotations(self,video_frames, tracks,team_ball_control):
+        output_video_frames= []
+        for frame_num, frame in enumerate(video_frames):
+            frame = frame.copy()
+
+            player_dict = tracks["players"][frame_num]
+            ball_dict = tracks["ball"][frame_num]
+            referee_dict = tracks["referees"][frame_num]
+
+            # Draw Players
+            for track_id, player in player_dict.items():
+                color = player.get("team_color",(0,0,255))
+                frame = self.draw_ellipse(frame, player["bbox"],color, track_id)
+
+                if player.get('has_ball',False):
+                    frame = self.draw_traingle(frame, player["bbox"],(0,0,255))
+
+            # Draw Referee
+            for _, referee in referee_dict.items():
+                frame = self.draw_ellipse(frame, referee["bbox"],(0,255,255))
+            
+            # Draw ball 
+            for track_id, ball in ball_dict.items():
+                frame = self.draw_traingle(frame, ball["bbox"],(0,255,0))
+
+
+            # Draw Team Ball Control
+            frame = self.draw_team_ball_control(frame, frame_num, team_ball_control)
+
+            output_video_frames.append(frame)
+
+        return output_video_frames
     
     #This draws ellipses using the tracking points of players, instead of bounding boxes for a cleaner look.
     def draw_ellipse(self,frame,bbox,color,track_id=None):
@@ -169,7 +180,7 @@ class Tracker:
         return frame
 
     def draw_team_ball_control(self,frame,frame_num,team_ball_control):
-        # Draw a semi-transparent rectaggle 
+        # Draw a semi-transparent rectangle 
         overlay = frame.copy()
         cv2.rectangle(overlay, (1350, 850), (1900,970), (255,255,255), -1 )
         alpha = 0.4
@@ -187,35 +198,27 @@ class Tracker:
 
         return frame
 
-    def draw_annotations(self,video_frames, tracks,team_ball_control):
-        output_video_frames= []
-        for frame_num, frame in enumerate(video_frames):
-            frame = frame.copy()
+    
+    def add_position_to_tracks(sekf,tracks):
+        for object, object_tracks in tracks.items():
+            for frame_num, track in enumerate(object_tracks):
+                for track_id, track_info in track.items():
+                    bbox = track_info['bbox']
+                    if object == 'ball':
+                        position= get_center_of_bbox(bbox)
+                    else:
+                        position = get_foot_position(bbox)
+                    tracks[object][frame_num][track_id]['position'] = position
 
-            player_dict = tracks["players"][frame_num]
-            ball_dict = tracks["ball"][frame_num]
-            referee_dict = tracks["referees"][frame_num]
+    #Helps in consistently tracking the ball by interpolating the few blanks in ball position at times.
+    def interpolate_ball_positions(self,ball_positions):
+        ball_positions = [x.get(1,{}).get('bbox',[]) for x in ball_positions]
+        df_ball_positions = pd.DataFrame(ball_positions,columns=['x1','y1','x2','y2'])
 
-            # Draw Players
-            for track_id, player in player_dict.items():
-                color = player.get("team_color",(0,0,255))
-                frame = self.draw_ellipse(frame, player["bbox"],color, track_id)
+        # Interpolate missing values
+        df_ball_positions = df_ball_positions.interpolate()
+        df_ball_positions = df_ball_positions.bfill()
 
-                if player.get('has_ball',False):
-                    frame = self.draw_traingle(frame, player["bbox"],(0,0,255))
+        ball_positions = [{1: {"bbox":x}} for x in df_ball_positions.to_numpy().tolist()]
 
-            # Draw Referee
-            for _, referee in referee_dict.items():
-                frame = self.draw_ellipse(frame, referee["bbox"],(0,255,255))
-            
-            # Draw ball 
-            for track_id, ball in ball_dict.items():
-                frame = self.draw_traingle(frame, ball["bbox"],(0,255,0))
-
-
-            # Draw Team Ball Control
-            frame = self.draw_team_ball_control(frame, frame_num, team_ball_control)
-
-            output_video_frames.append(frame)
-
-        return output_video_frames
+        return ball_positions
