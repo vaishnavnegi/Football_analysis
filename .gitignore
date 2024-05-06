@@ -1,6 +1,6 @@
-/.venv
-/input_videos
-/models
-/runs
-/training
-/yolov8x.pt
+*.venv
+input_videos/
+models/
+runs/
+output_videos/
+stubs/
