@@ -33,3 +33,6 @@ The objective of this project is to utilize YOLO, a top-tier AI object detection
 4. Implement OpticalFlow techniques to quantify and analyze the movement of the camera throughout the video footage. By tracking the displacement of pixels between consecutive frames, we gain valuable insights into the dynamics of camera motion.
 5. Leverage the perspective transformation capabilities offered by CV2's (OpenCV) functionality. Through this process, we can effectively represent the spatial depth and perspective inherent within the scene, providing a more accurate depiction of the visual environment.
 6. Utilize advanced techniques to measure the speed and distance covered by players captured within the image or video. By analyzing the trajectories and displacements of individual players, we can ascertain valuable metrics pertaining to their motion and activity within the scene.
+
+## Directory Structure of the project for reference
+![Screenshot](Dir_struct.png)
