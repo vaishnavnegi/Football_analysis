@@ -103,6 +103,7 @@ class Tracker:
 
         return tracks
     
+    #This draws ellipses using the tracking points of players, instead of bounding boxes for a cleaner look.
     def draw_ellipse(self,frame,bbox,color,track_id=None):
         y2 = int(bbox[3])
         x_center, _ = get_center_of_bbox(bbox)
@@ -126,7 +127,8 @@ class Tracker:
         x2_rect = x_center + rectangle_width//2
         y1_rect = (y2- rectangle_height//2) +15
         y2_rect = (y2+ rectangle_height//2) +15
-
+        
+        #For writing the track ids of players in a rectangle at the bottom of the ellipses
         if track_id is not None:
             cv2.rectangle(frame,
                           (int(x1_rect),int(y1_rect) ),
@@ -134,6 +136,7 @@ class Tracker:
                           color,
                           cv2.FILLED)
             
+            #In case of a 3 digit track id, adjust starting position to accomodate it better
             x1_text = x1_rect+12
             if track_id > 99:
                 x1_text -=10
@@ -149,9 +152,10 @@ class Tracker:
             )
 
         return frame
-
+    
+    #This draws a triangle marker over the ball for differentiating it from other objects.
     def draw_traingle(self,frame,bbox,color):
-        y= int(bbox[1])
+        y= int(bbox[1]) # y1 and not y2 for top of the ball
         x,_ = get_center_of_bbox(bbox)
 
         triangle_points = np.array([
