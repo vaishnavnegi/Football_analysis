@@ -77,7 +77,7 @@ def main():
         cropped_image = frame[int(bbox[1]):int(bbox[3]), int(bbox[0]):int(bbox[2])]
         
         #saving the image
-        cv2.imwrite(f'output_videos/cropped_image.jpg', cropped_image) """
+        cv2.imwrite(f'output_videos/croped_img.jpg', cropped_image) """
 
     # Draw output 
     ## Draw object Tracks
