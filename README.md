@@ -7,8 +7,9 @@ The objective of this project is to utilize YOLO, a top-tier AI object detection
 ![Screenshot](output_videos/Screenshot.png)
 
 ## Datasets
-- kaggle Dataset: https://www.kaggle.com/competitions/d...
-- Robowflow Football Dataset:  https://universe.roboflow.com/roboflo...
+- kaggle Dataset: [https://www.kaggle.com/competitions/d...](https://www.kaggle.com/competitions/dfl-bundesliga-data-shootout/data?select=clips)
+- Video link used because Kaggle removed the videos from the kaggle dataset above: https://drive.google.com/file/d/1t6agoqggZKx6thamUuPAIdN_1zR9v9S_/view
+- Robowflow Football Dataset:  [https://universe.roboflow.com/roboflo...](https://universe.roboflow.com/roboflow-jvuqo/football-players-detection-3zvbc/dataset/1)
 
 ## Components
 - YOLO: AI object detection model
